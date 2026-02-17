@@ -2,271 +2,248 @@ import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Lock, GraduationCap, 
   BookOpen, Hash, Loader2, Sparkles, Zap, 
-  Coffee, Brain, Trophy, ChevronRight, Target
+  Coffee, Brain, ChevronRight, Target, ArrowRight,
+  ShieldCheck, Activity, Globe
 } from 'lucide-react';
 
-const RegistrationForm = () => {
+const HyperAuthWide = () => {
+  const [isLogin, setIsLogin] = useState(false); // Toggle between Login/Register
   const [loading, setLoading] = useState(false);
-  const [activeField, setActiveField] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [mounted, setMounted] = useState(false);
-
-  // Animation trigger on mount
+  
+  // Animation trigger
   useEffect(() => { setMounted(true); }, []);
 
+  // Form State
   const [formData, setFormData] = useState({
     name: '', email: '', password: '',
     college: '', branch: '', semester: '',
     bio: '', type: 'HARDWORKING', goal: '80%'
   });
 
-  const studentTypes = [
-    { id: 'LAZY', label: 'Chill', icon: Coffee, color: 'text-orange-500 bg-orange-50 border-orange-200', desc: 'Efficiency through inactivity' },
-    { id: 'BALANCED', label: 'Balanced', icon: Zap, color: 'text-blue-500 bg-blue-50 border-blue-200', desc: 'The perfect equilibrium' },
-    { id: 'HARDWORKING', label: 'Grinder', icon: Sparkles, color: 'text-purple-500 bg-purple-50 border-purple-200', desc: 'Relentless pursuit' },
-    { id: 'GENIUS', label: 'Prodigy', icon: Brain, color: 'text-emerald-500 bg-emerald-50 border-emerald-200', desc: 'Built different' },
+  // Constants
+  const API_BASE = 'http://localhost:3000/api/users'; // Based on your request
+
+  const STUDENT_TYPES = [
+    { id: 'LAZY', label: 'Chill', icon: Coffee, color: 'text-orange-600 bg-orange-50 border-orange-200' },
+    { id: 'BALANCED', label: 'Balanced', icon: Zap, color: 'text-blue-600 bg-blue-50 border-blue-200' },
+    { id: 'HARDWORKING', label: 'Grinder', icon: Sparkles, color: 'text-purple-600 bg-purple-50 border-purple-200' },
+    { id: 'GENIUS', label: 'Prodigy', icon: Brain, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
   ];
 
-  const goals = [
-    { id: '35%', label: 'Pass', sub: 'Survive', color: 'bg-red-500' },
-    { id: '60%', label: 'Avg', sub: 'Decent', color: 'bg-yellow-500' },
-    { id: '80%', label: 'Good', sub: 'High', color: 'bg-blue-600' },
-    { id: '95%', label: 'Top', sub: 'Elite', color: 'bg-emerald-600' },
+  const GOALS = [
+    { id: 'PASS', label: 'Pass', color: 'bg-red-500' },
+    { id: 'AVG', label: 'Avg', color: 'bg-yellow-500' },
+    { id: 'HIGH', label: 'Good', color: 'bg-blue-600' },
+    { id: 'TOP', label: 'Top', color: 'bg-emerald-600' },
   ];
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
+    setSuccess('');
 
-    // --- LOGIC TO SAVE TO LOCAL STORAGE ---
-    // Simulating API delay
-    setTimeout(() => {
-        // 1. Create a fake token (In real app, this comes from backend)
-        const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.simulated-token";
-        
-        // 2. Save Token
-        localStorage.setItem('authToken', fakeToken);
-        
-        // 3. Save User Data (optional, but good for UI updates)
-        localStorage.setItem('userProfile', JSON.stringify(formData));
+    const endpoint = isLogin ? `${API_BASE}/login` : `${API_BASE}/register`;
+    
+    // Payload formatting: Backend expects integer for semester
+    const payload = isLogin 
+      ? { email: formData.email, password: formData.password }
+      : { ...formData, semester: parseInt(formData.semester) || 1 };
 
-        console.log("Success: Data saved to LocalStorage"); // Check console to verify
-        setLoading(false);
-        alert("Profile Created! Token saved to LocalStorage.");
-    }, 1500);
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Connection refused by host.');
+
+      // --- SUCCESS STATE ---
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      setSuccess(isLogin ? "Welcome back, Commander." : "Identity Matrix Initialized.");
+      
+      // Optional: Redirect
+      // setTimeout(() => window.location.href = '/dashboard', 1000);
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-gray-900 flex items-center justify-center p-4 md:p-8 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[#FDFDFD] text-gray-900 font-sans flex items-center justify-center p-4 md:p-6 overflow-hidden relative">
       
-      {/* --- BACKGROUND FX (LIGHT THEME) --- */}
-      {/* Subtle Dot Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
-      
-      {/* Soft Ambient Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-purple-100/50 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
+      {/* --- AMBIENT BACKGROUND --- */}
+      <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px] opacity-40"></div>
+      <div className="absolute top-[-10%] left-[20%] w-[800px] h-[800px] bg-blue-100/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply animate-pulse-slow"></div>
+      <div className="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
 
-      {/* --- MAIN CARD --- */}
+      {/* --- WIDE GLASS CARD --- */}
       <div className={`
-        relative w-full max-w-2xl
-        bg-white/80 backdrop-blur-xl border border-white/40 rounded-[2.5rem] 
-        shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] overflow-hidden
+        relative w-full max-w-7xl h-[90vh] md:h-auto min-h-[700px]
+        bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[3rem] 
+        shadow-[0_40px_100px_-30px_rgba(0,0,0,0.08)] overflow-hidden
+        grid grid-cols-1 lg:grid-cols-12
         transition-all duration-1000 ease-out transform
-        ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+        ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
       `}>
-        
-        {/* --- FORM SECTION --- */}
-        <div className="p-8 md:p-12 relative">
-          <div className="mb-10 flex items-end justify-between">
-            <div>
-              <h2 className="text-4xl font-extrabold tracking-tight text-gray-900">
-                Create Profile
-              </h2>
-              <p className="text-gray-500 text-sm mt-2 font-medium">Initialize your academic database entry.</p>
-            </div>
-            <div className="hidden md:flex items-center gap-2 text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              SYSTEM V2.0.4
-            </div>
+
+        {/* --- LEFT PANEL: STATUS & INFO (4 Cols) --- */}
+        <div className="hidden lg:flex lg:col-span-5 bg-gray-50/50 flex-col justify-between p-12 border-r border-white/50 relative overflow-hidden">
+           {/* Decor */}
+           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-50 to-purple-50 rounded-bl-[100px] opacity-60"></div>
+
+           <div>
+             <div className="flex items-center gap-2 mb-8">
+               <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
+               <span className="text-xs font-extrabold tracking-[0.2em] text-gray-400 uppercase">System v4.0</span>
+             </div>
+             <h1 className="text-5xl font-extrabold tracking-tighter text-gray-900 leading-[0.9]">
+               ACADEMIC<br/>
+               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">NEXUS</span>
+             </h1>
+             <p className="mt-6 text-gray-500 font-medium leading-relaxed max-w-sm">
+               Initialize your digital student persona. Track metrics, optimize grades, and synchronize with the campus grid.
+             </p>
+           </div>
+
+           {/* Stats / Features */}
+           <div className="space-y-4">
+             <FeatureRow icon={ShieldCheck} title="Secure Encryption" text="Bcrypt Hashing" />
+             <FeatureRow icon={Activity} title="Real-time Metrics" text="Live Tracking" />
+             <FeatureRow icon={Globe} title="Global Sync" text="Campus Wide" />
+           </div>
+
+           {/* Bottom Badge */}
+           <div className="flex items-center gap-4 pt-8 border-t border-gray-200/60">
+             <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Server Status</div>
+             <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-100">
+               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> ONLINE
+             </div>
+           </div>
+        </div>
+
+        {/* --- RIGHT PANEL: INTERACTIVE FORM (8 Cols) --- */}
+        <div className="lg:col-span-7 p-8 md:p-14 overflow-y-auto custom-scrollbar relative">
+          
+          {/* Top Nav */}
+          <div className="flex justify-end mb-8">
+             <button 
+               onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
+               className="group flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-gray-100 hover:border-gray-300 shadow-sm transition-all"
+             >
+               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest group-hover:text-gray-900">
+                 {isLogin ? 'Need an account?' : 'Have an account?'}
+               </span>
+               <span className="text-xs font-bold text-blue-600 group-hover:underline decoration-2 underline-offset-2">
+                 {isLogin ? 'Register' : 'Login'}
+               </span>
+             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-10">
-            
-            {/* 1. Identity Grid */}
-            <div className="space-y-4">
-              <Label>Identity Matrix</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <ModernInput 
-                  icon={User} 
-                  placeholder="Full Name" 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  isActive={activeField === 'name'}
-                  onFocus={() => setActiveField('name')}
-                />
-                <ModernInput 
-                  icon={Mail} 
-                  placeholder="Email Address" 
-                  type="email"
-                  value={formData.email} 
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  isActive={activeField === 'email'}
-                  onFocus={() => setActiveField('email')}
-                />
-              </div>
-              <ModernInput 
-                icon={Lock} 
-                placeholder="Set Password" 
-                type="password"
-                value={formData.password} 
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                isActive={activeField === 'password'}
-                onFocus={() => setActiveField('password')}
-              />
-            </div>
+          <div className="max-w-xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              {isLogin ? 'Access Portal' : 'New Identity'}
+            </h2>
+            <p className="text-gray-400 text-sm mb-8">
+              {isLogin ? 'Enter credentials to decrypt your dashboard.' : 'Fill required fields to generate JWT.'}
+            </p>
 
-            {/* 2. Academic Grid */}
-            <div className="space-y-4">
-              <Label>Academic Data</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <ModernInput 
-                  icon={GraduationCap} 
-                  placeholder="College / Institute" 
-                  value={formData.college} 
-                  onChange={(e) => setFormData({...formData, college: e.target.value})}
-                  isActive={activeField === 'college'}
-                  onFocus={() => setActiveField('college')}
-                />
-                <div className="grid grid-cols-3 gap-5">
-                  <div className="col-span-2">
-                    <ModernInput 
-                      icon={BookOpen} 
-                      placeholder="Branch" 
-                      value={formData.branch} 
-                      onChange={(e) => setFormData({...formData, branch: e.target.value})}
-                      isActive={activeField === 'branch'}
-                      onFocus={() => setActiveField('branch')}
-                    />
-                  </div>
-                  <ModernInput 
-                    icon={Hash} 
-                    placeholder="Sem" 
-                    type="number"
-                    value={formData.semester} 
-                    onChange={(e) => setFormData({...formData, semester: e.target.value})}
-                    isActive={activeField === 'semester'}
-                    onFocus={() => setActiveField('semester')}
-                  />
-                </div>
-              </div>
-              <textarea 
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-gray-300 transition-all resize-none text-sm font-medium placeholder-gray-400 shadow-inner"
-                placeholder="Brief bio or academic interests..."
-                rows="2"
-                value={formData.bio}
-                onChange={(e) => setFormData({...formData, bio: e.target.value})}
-              ></textarea>
-            </div>
-
-            {/* 3. The Vibe Selector (Clean Bento) */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Select Archetype</Label>
-                <span className="text-xs text-gray-900 font-bold bg-gray-100 px-2 py-1 rounded-md">{formData.type}</span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {studentTypes.map((t) => {
-                   const isSelected = formData.type === t.id;
-                   return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setFormData({...formData, type: t.id})}
-                      className={`
-                        relative group flex flex-col items-start justify-between p-4 h-32 rounded-2xl border-2 transition-all duration-200 ease-out
-                        ${isSelected 
-                          ? `${t.color} shadow-lg scale-[1.02]` 
-                          : 'bg-white border-gray-100 hover:border-gray-200 hover:bg-gray-50'}
-                      `}
-                    >
-                      <t.icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-inherit' : 'text-gray-400'}`} />
-                      
-                      <div className="text-left z-10">
-                        <span className={`block text-sm font-bold ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
-                          {t.label}
-                        </span>
-                        <span className={`text-[10px] leading-tight block mt-1 ${isSelected ? 'text-gray-700' : 'text-gray-400'}`}>
-                          {t.desc}
-                        </span>
-                      </div>
-                    </button>
-                   );
-                })}
-              </div>
-            </div>
-
-            {/* 4. Goal Slider (Hyper Premium Segmented Control) */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Target Output</Label>
-                <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">
-                   <Target size={14} className="text-gray-900" />
-                   <span className="text-xs text-gray-500 font-medium">Aim: <span className="text-gray-900 font-bold">{formData.goal}</span></span>
-                </div>
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-8">
               
-              <div className="p-1.5 bg-gray-100 rounded-2xl flex gap-2 relative">
-                {goals.map((g) => {
-                    const isActive = formData.goal === g.id;
-                    return (
-                        <button
-                            key={g.id}
-                            type="button"
-                            onClick={() => setFormData({...formData, goal: g.id})}
-                            className={`
-                            relative flex-1 py-4 rounded-xl text-sm font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1
-                            ${isActive 
-                                ? 'bg-white text-gray-900 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] ring-1 ring-black/5' 
-                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200/50'}
-                            `}
-                        >
-                            {/* Dot Indicator */}
-                            <div className={`w-1.5 h-1.5 rounded-full mb-1 transition-colors ${isActive ? g.color : 'bg-gray-300'}`} />
-                            
-                            <span className="z-10">{g.label}</span>
-                            
-                            {/* Subtext only visible on desktop/larger screens or when active */}
-                            <span className={`text-[10px] font-medium transition-all ${isActive ? 'text-gray-500 opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
-                                {g.sub}
-                            </span>
-                        </button>
-                    )
-                })}
-              </div>
-            </div>
+              {/* Login View */}
+              {isLogin && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-500">
+                  <InputGroup icon={Mail} type="email" name="email" placeholder="Student Email" value={formData.email} onChange={handleChange} />
+                  <InputGroup icon={Lock} type="password" name="password" placeholder="Password Key" value={formData.password} onChange={handleChange} />
+                </div>
+              )}
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={`
-                group w-full py-5 rounded-2xl font-bold text-white text-lg relative overflow-hidden transition-all duration-300
-                ${loading 
-                    ? 'bg-gray-800 cursor-wait' 
-                    : 'bg-gray-900 hover:bg-black hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] hover:scale-[1.005] active:scale-[0.99]'}
-              `}
-            >
-              <div className="relative flex items-center justify-center gap-3">
-                {loading ? <Loader2 className="animate-spin" /> : (
-                  <>
-                    <span>Initialize Profile</span>
-                    <ChevronRight size={20} className="text-white/60 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </div>
-            </button>
+              {/* Register View (Expanded) */}
+              {!isLogin && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
+                  
+                  {/* Row 1 */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputGroup icon={User} name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} />
+                    <InputGroup icon={Mail} name="email" placeholder="Email" type="email" value={formData.email} onChange={handleChange} />
+                  </div>
 
-          </form>
+                  {/* Row 2 */}
+                  <InputGroup icon={Lock} name="password" placeholder="Password" type="password" value={formData.password} onChange={handleChange} />
+
+                  {/* Row 3 - Academic */}
+                  <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <GraduationCap size={16} className="text-gray-400" />
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Academic Data</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <InputGroup icon={BookOpen} name="college" placeholder="College" value={formData.college} onChange={handleChange} bg="bg-white" />
+                      <InputGroup icon={Hash} name="branch" placeholder="Branch" value={formData.branch} onChange={handleChange} bg="bg-white" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <InputGroup icon={Hash} name="semester" placeholder="Semester (Int)" type="number" value={formData.semester} onChange={handleChange} bg="bg-white" />
+                       <InputGroup icon={User} name="bio" placeholder="Short Bio" value={formData.bio} onChange={handleChange} bg="bg-white" />
+                    </div>
+                  </div>
+
+                  {/* Selectors */}
+                  <div className="space-y-5">
+                    {/* Archetype */}
+                    <div>
+                      <Label>User Archetype</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                        {STUDENT_TYPES.map((t) => (
+                          <button key={t.id} type="button" onClick={() => setFormData({...formData, type: t.id})}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${formData.type === t.id ? `${t.color} scale-105 shadow-sm` : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'}`}>
+                            <t.icon size={18} className="mb-1.5" />
+                            <span className="text-[10px] font-bold uppercase">{t.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Goals */}
+                    <div>
+                      <Label>Target Metric</Label>
+                      <div className="flex gap-2 mt-2 bg-gray-100 p-1 rounded-xl">
+                        {GOALS.map((g) => (
+                          <button key={g.id} type="button" onClick={() => setFormData({...formData, goal: g.id})}
+                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${formData.goal === g.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+                             {g.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* Status Messages */}
+              {error && <div className="p-4 rounded-xl bg-red-50 text-red-600 text-sm font-medium flex items-center gap-2 animate-pulse"><ShieldCheck size={16}/> {error}</div>}
+              {success && <div className="p-4 rounded-xl bg-emerald-50 text-emerald-600 text-sm font-medium flex items-center gap-2"><ShieldCheck size={16}/> {success}</div>}
+
+              {/* Action */}
+              <button disabled={loading} className="w-full h-14 bg-gray-900 hover:bg-black text-white rounded-2xl font-bold tracking-wide transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-3 shadow-xl shadow-gray-200">
+                {loading ? <Loader2 className="animate-spin" /> : <><span>{isLogin ? 'AUTHENTICATE' : 'INITIALIZE'}</span><ArrowRight size={18} className="opacity-60"/></>}
+              </button>
+
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -275,31 +252,34 @@ const RegistrationForm = () => {
 
 // --- Sub-Components ---
 
+const FeatureRow = ({ icon: Icon, title, text }) => (
+  <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/40 border border-white/50 backdrop-blur-sm">
+    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
+      <Icon size={20} />
+    </div>
+    <div>
+      <div className="text-sm font-bold text-gray-900">{title}</div>
+      <div className="text-xs text-gray-500">{text}</div>
+    </div>
+  </div>
+);
+
 const Label = ({ children }) => (
-  <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-gray-400 pl-1 mb-1">
+  <h3 className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 pl-1">
     {children}
   </h3>
 );
 
-const ModernInput = ({ icon: Icon, isActive, ...props }) => (
-  <div className={`
-    relative group transition-all duration-300
-    ${isActive ? 'scale-[1.01]' : ''}
-  `}>
+const InputGroup = ({ icon: Icon, bg = "bg-gray-50", ...props }) => (
+  <div className="relative group">
     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-      <Icon className={`h-5 w-5 transition-colors duration-300 ${isActive ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-500'}`} />
+      <Icon className="h-4 w-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
     </div>
     <input
       {...props}
-      className={`
-        w-full bg-gray-50 border rounded-2xl py-4 pl-12 pr-4 text-sm font-medium text-gray-900
-        placeholder-gray-400 focus:outline-none transition-all duration-300 shadow-sm
-        ${isActive 
-          ? 'border-gray-300 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] ring-2 ring-gray-100' 
-          : 'border-gray-200 hover:border-gray-300 hover:bg-white'}
-      `}
+      className={`w-full ${bg} border border-transparent focus:bg-white rounded-xl py-3.5 pl-11 pr-4 text-sm font-semibold text-gray-900 placeholder-gray-400 outline-none focus:border-blue-100 focus:ring-4 focus:ring-blue-50/50 transition-all`}
     />
   </div>
 );
 
-export default RegistrationForm;
+export default HyperAuthWide;
