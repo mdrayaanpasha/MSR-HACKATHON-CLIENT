@@ -30,7 +30,9 @@ const NexusExplorer = () => {
         }),
       });
       const result = await response.json();
+
       setResources(result.data || []);
+      window.location.href="/"
     } catch (err) {
       console.error(err);
     } finally {

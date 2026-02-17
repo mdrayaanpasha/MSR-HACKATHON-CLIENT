@@ -71,6 +71,7 @@ const HyperAuthWide = () => {
       localStorage.setItem('user', JSON.stringify(data.user));
       
       setSuccess(isLogin ? "Welcome back, Commander." : "Identity Matrix Initialized.");
+      window.location.href="/"
       
       // Optional: Redirect
       // setTimeout(() => window.location.href = '/dashboard', 1000);
