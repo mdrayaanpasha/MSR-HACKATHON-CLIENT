@@ -36,7 +36,7 @@ const Navbar = () => {
   if (location.pathname === '/register') return null;
 
   return (
-    <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-xl border-b border-[#D2D2D7] z-[100] h-16 flex items-center justify-center px-8">
+    <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-xl border-b border-[#D2D2D7] z-[100] h-16 flex items-center justify-center px-8 mb-15">
       <div className="w-full max-w-7xl flex justify-between items-center">
         
         {/* Brand */}

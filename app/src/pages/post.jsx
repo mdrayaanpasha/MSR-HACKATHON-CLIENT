@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   FileText, Star, Download, MessageSquare, 
   ChevronLeft, Share2, Shield, Globe, Loader2, Send,
-  BarChart3, TrendingUp, Users, Zap
+  TrendingUp, Users, Zap, Edit3
 } from 'lucide-react';
 
 const ResourceDetail = () => {
@@ -15,6 +15,11 @@ const ResourceDetail = () => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [userReview, setUserReview] = useState(null);
+
+  // Get current logged-in user ID from local storage
+  const currentUser = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => { fetchDetail(); }, [id]);
 
@@ -25,40 +30,75 @@ const ResourceDetail = () => {
       });
       const json = await res.json();
       setData(json);
+
+      // --- LOGIC: Find if current user already reviewed this ---
+      const existingReview = json.reviews?.find(r => r.userId === currentUser?.id);
+      if (existingReview) {
+        setUserReview(existingReview);
+        setRating(existingReview.rating);
+        setComment(existingReview.comment);
+      }
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    if (!comment.trim()) return;
     setSubmitting(true);
+
+    const method = userReview ? 'PUT' : 'POST';
+    const endpoint = userReview 
+      ? `http://localhost:3000/api/reviews/${userReview.id}` 
+      : `http://localhost:3000/api/reviews/${id}`;
+
     try {
-      const res = await fetch(`http://localhost:3000/api/reviews/${id}`, {
-        method: 'POST',
+      const res = await fetch(endpoint, {
+        method: method,
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}` 
         },
         body: JSON.stringify({ rating, comment })
       });
-      if (!res.ok) throw new Error("Submission failed.");
-      setComment('');
-      fetchDetail();
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Transmission failed.");
+      }
+      
+      fetchDetail(); // Refresh UI
     } catch (err) { alert(err.message); } finally { setSubmitting(false); }
+  };
+
+  // ... handleDownload remains same ...
+  const handleDownload = async () => {
+    if (!data?.fileUrl) return;
+    setDownloading(true);
+    try {
+      const response = await fetch(data.fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const extension = data.fileUrl.split('.').pop().split('?')[0] || 'pdf';
+      link.setAttribute('download', `${data.title.replace(/\s+/g, '_')}.${extension}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) { window.open(data.fileUrl, '_blank'); } finally { setDownloading(false); }
   };
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-[#F5F5F7]"><Loader2 className="animate-spin text-[#0071E3]" size={32} /></div>;
 
-  // --- CALCULATE ANALYTICS ---
   const totalReviews = data?.reviews?.length || 0;
-  const avgRating = totalReviews > 0 
-    ? (data.reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews).toFixed(1) 
-    : "0.0";
+  const avgRating = totalReviews > 0 ? (data.reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews).toFixed(1) : "0.0";
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] p-6 flex items-center justify-center">
       <div className="w-full max-w-7xl bg-white border border-[#D2D2D7] rounded-[2.5rem] shadow-sm overflow-hidden grid lg:grid-cols-12 min-h-[85vh]">
         
-        {/* --- LEFT: ASSET IDENTITY & ANALYTICS (5 COLS) --- */}
+        {/* --- LEFT PANEL --- */}
         <div className="lg:col-span-5 bg-[#F5F5F7] p-12 border-r border-[#D2D2D7] flex flex-col justify-between overflow-y-auto custom-scrollbar">
           <div>
             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#86868B] hover:text-[#1D1D1F] mb-10 transition-colors group">
@@ -76,7 +116,6 @@ const ResourceDetail = () => {
               </div>
             </div>
 
-            {/* --- NEW: ANALYTICS DASHBOARD --- */}
             <div className="grid grid-cols-2 gap-4 mb-10">
               <AnalyticsCard label="Quality Index" value={`${avgRating} / 5.0`} icon={Zap} />
               <AnalyticsCard label="Community" value={`${totalReviews} Reviews`} icon={Users} />
@@ -88,6 +127,13 @@ const ResourceDetail = () => {
               <MetaRow label="Semester" value={data?.semester} />
               <MetaRow label="Access" value={data?.privacy} icon={data?.privacy === 'PUBLIC' ? Globe : Shield} />
               <MetaRow label="Branch" value={data?.branch} />
+            </div>
+            
+            <div className="mt-10">
+              <button onClick={handleDownload} disabled={downloading} className="w-full py-4 bg-white border border-[#D2D2D7] rounded-2xl flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-widest hover:border-[#0071E3] hover:text-[#0071E3] transition-all group active:scale-[0.98]">
+                {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} className="text-[#0071E3]" />}
+                Initialize File Download
+              </button>
             </div>
           </div>
 
@@ -103,41 +149,49 @@ const ResourceDetail = () => {
           </div>
         </div>
 
-        {/* --- RIGHT: FEED & INTERACTION (7 COLS) --- */}
+        {/* --- RIGHT PANEL --- */}
         <div className="lg:col-span-7 flex flex-col h-[85vh] bg-white">
           <div className="p-8 border-b border-[#D2D2D7] flex items-center justify-between bg-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <TrendingUp size={18} className="text-[#0071E3]" />
               <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Peer Intelligence</span>
             </div>
-            <a href={data?.fileUrl} target="_blank" rel="noreferrer" className="px-6 py-3 bg-[#0071E3] text-white rounded-full font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-[#0077ED] transition-all">
-              <Download size={14}/> Retrieve Binary
-            </a>
+            <button onClick={handleDownload} disabled={downloading} className="px-6 py-3 bg-[#0071E3] text-white rounded-full font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#0077ED] transition-all shadow-lg shadow-[#0071E3]/20">
+              {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14}/>} Retrieve Binary
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-            {data?.reviews?.map(review => (
-              <div key={review.id} className="animate-in fade-in slide-in-from-bottom-2">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold uppercase tracking-tight">{review.user?.name}</span>
-                    <div className="flex gap-0.5">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={10} fill={i < review.rating ? "#0071E3" : "none"} className={i < review.rating ? "text-[#0071E3]" : "text-[#D2D2D7]"} />
-                      ))}
+            {data?.reviews?.map(review => {
+              const isMine = review.userId === currentUser?.id;
+              return (
+                <div key={review.id} className={`p-4 rounded-3xl transition-all ${isMine ? 'bg-[#F5F5F7] border border-[#0071E3]/20 shadow-sm' : ''}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-tight">
+                        {review.user?.name} {isMine && <span className="ml-1 text-[9px] text-[#0071E3] bg-[#0071E3]/10 px-1.5 py-0.5 rounded-md">YOU</span>}
+                      </span>
+                      <div className="flex gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} size={10} fill={i < review.rating ? "#0071E3" : "none"} className={i < review.rating ? "text-[#0071E3]" : "text-[#D2D2D7]"} />
+                        ))}
+                      </div>
                     </div>
+                    <span className="text-[9px] text-[#86868B] font-bold uppercase">{new Date(review.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <span className="text-[9px] text-[#86868B] font-bold uppercase">{new Date(review.createdAt).toLocaleDateString()}</span>
+                  <p className="text-sm text-[#424245] leading-relaxed pl-4 border-l-2 border-[#D2D2D7] font-medium italic">"{review.comment}"</p>
                 </div>
-                <p className="text-sm text-[#424245] leading-relaxed pl-4 border-l-2 border-[#D2D2D7] font-medium">{review.comment}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Submission Module */}
+          {/* Submission / Edit Module */}
           <div className="p-8 border-t border-[#D2D2D7] bg-[#F5F5F7]/50 backdrop-blur-sm">
-            <SectionLabel label="Submit Analysis" />
-            <form onSubmit={handleReviewSubmit} className="mt-4 space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <SectionLabel label={userReview ? "Modify Your Analysis" : "Submit Analysis"} />
+              {userReview && <div className="text-[9px] font-bold text-[#0071E3] uppercase flex items-center gap-1"><Edit3 size={10}/> Editing Mode</div>}
+            </div>
+            <form onSubmit={handleReviewSubmit} className="space-y-4">
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((num) => (
                   <button key={num} type="button" onClick={() => setRating(num)} className={`w-10 h-10 rounded-xl font-bold text-xs transition-all border ${rating === num ? 'bg-[#0071E3] text-white border-[#0071E3]' : 'bg-white text-[#86868B] border-[#D2D2D7] hover:border-[#86868B]'}`}>
@@ -147,7 +201,7 @@ const ResourceDetail = () => {
               </div>
               <div className="relative">
                 <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Analyze this resource..." className="w-full bg-white border border-[#D2D2D7] rounded-2xl p-4 pr-14 text-sm font-medium focus:outline-none focus:border-[#0071E3] transition-all h-20" />
-                <button disabled={submitting || !comment} className={`absolute right-3 bottom-3 p-3 rounded-xl transition-all ${submitting || !comment ? 'bg-gray-100 text-gray-300' : 'bg-[#1D1D1F] text-white hover:bg-black shadow-lg'}`}>
+                <button disabled={submitting || !comment.trim()} className={`absolute right-3 bottom-3 p-3 rounded-xl transition-all ${submitting || !comment.trim() ? 'bg-gray-100 text-gray-300' : 'bg-[#1D1D1F] text-white hover:bg-black shadow-lg'}`}>
                   {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                 </button>
               </div>
@@ -159,33 +213,18 @@ const ResourceDetail = () => {
   );
 };
 
-// --- NEW SUB-COMPONENTS FOR LIFE ---
-
+// ... AnalyticsCard, SectionLabel, MetaRow remain same ...
 const AnalyticsCard = ({ label, value, icon: Icon }) => (
-  <div className="bg-white border border-[#D2D2D7] p-5 rounded-3xl shadow-sm">
-    <div className="flex items-center gap-2 mb-2 text-[#86868B]">
-      <Icon size={14} />
-      <span className="text-[9px] font-bold uppercase tracking-widest">{label}</span>
-    </div>
+  <div className="bg-white border border-[#D2D2D7] p-5 rounded-3xl shadow-sm hover:border-[#0071E3] transition-all">
+    <div className="flex items-center gap-2 mb-2 text-[#86868B]"><Icon size={14} /><span className="text-[9px] font-bold uppercase tracking-widest">{label}</span></div>
     <span className="text-xl font-semibold tracking-tight text-[#1D1D1F]">{value}</span>
   </div>
 );
-
 const SectionLabel = ({ label }) => (
-  <div className="flex items-center gap-2 mb-4">
-    <div className="w-1.5 h-1.5 bg-[#0071E3]" />
-    <span className="text-[10px] font-bold text-[#1D1D1F] uppercase tracking-[0.2em]">{label}</span>
-  </div>
+  <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#0071E3]" /><span className="text-[10px] font-bold text-[#1D1D1F] uppercase tracking-[0.2em]">{label}</span></div>
 );
-
 const MetaRow = ({ label, value, icon: Icon }) => (
-  <div className="flex items-center justify-between text-[10px] py-2 border-b border-[#D2D2D7]/30 last:border-0">
-    <span className="font-bold text-[#86868B] uppercase tracking-widest">{label}</span>
-    <div className="flex items-center gap-2">
-      {Icon && <Icon size={12} className="text-[#0071E3]" />}
-      <span className="font-bold text-[#1D1D1F] uppercase">{value}</span>
-    </div>
-  </div>
+  <div className="flex items-center justify-between text-[10px] py-2 border-b border-[#D2D2D7]/30 last:border-0"><span className="font-bold text-[#86868B] uppercase tracking-widest">{label}</span><div className="flex items-center gap-2">{Icon && <Icon size={12} className="text-[#0071E3]" />}<span className="font-bold text-[#1D1D1F] uppercase">{value}</span></div></div>
 );
 
 export default ResourceDetail;
