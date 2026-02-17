@@ -24,7 +24,7 @@ const HyperAuthWide = () => {
   });
 
   // Constants
-  const API_BASE = 'http://localhost:3000/api/users'; // Based on your request
+  const API_BASE = 'https://msr-hackathon-server.vercel.app/api/users'; // Based on your request
 
   const STUDENT_TYPES = [
     { id: 'LAZY', label: 'Chill', icon: Coffee, color: 'text-orange-600 bg-orange-50 border-orange-200' },

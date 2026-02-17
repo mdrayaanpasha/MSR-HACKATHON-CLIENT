@@ -30,7 +30,7 @@ const NexusHomeFeed = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/resource/', {
+      const response = await fetch('https://msr-hackathon-server.vercel.app/api/resource/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({}), 
@@ -47,7 +47,7 @@ const NexusHomeFeed = () => {
     setAiResponse(null);
 
     try {
-      const res = await fetch('http://localhost:3000/api/ai/chat', {
+      const res = await fetch('https://msr-hackathon-server.vercel.app/api/ai/chat', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -18,7 +18,7 @@ const AcademicDashboard = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/users/profile', {
+      const res = await fetch('https://msr-hackathon-server.vercel.app/api/users/profile', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
@@ -34,7 +34,7 @@ const AcademicDashboard = () => {
   const handleUpdate = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/users/profile', {
+      const res = await fetch('https://msr-hackathon-server.vercel.app/api/users/profile', {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

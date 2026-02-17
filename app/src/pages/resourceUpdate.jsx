@@ -28,7 +28,7 @@ const ResourceUpdatePage = () => {
 
   const fetchInitialData = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/api/resource/${id}`, {
+      const res = await fetch(`https://msr-hackathon-server.vercel.app/api/resource/${id}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
@@ -60,7 +60,7 @@ const ResourceUpdatePage = () => {
     setError('');
 
     try {
-      const res = await fetch(`http://localhost:3000/api/resource/${id}`, {
+      const res = await fetch(`https://msr-hackathon-server.vercel.app/api/resource/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

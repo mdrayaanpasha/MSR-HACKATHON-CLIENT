@@ -25,7 +25,7 @@ const ResourceDetail = () => {
 
   const fetchDetail = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/api/resource/${id}`, {
+      const res = await fetch(`https://msr-hackathon-server.vercel.app/api/resource/${id}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const json = await res.json();
@@ -48,8 +48,8 @@ const ResourceDetail = () => {
 
     const method = userReview ? 'PUT' : 'POST';
     const endpoint = userReview 
-      ? `http://localhost:3000/api/reviews/${userReview.id}` 
-      : `http://localhost:3000/api/reviews/${id}`;
+      ? `https://msr-hackathon-server.vercel.app/api/reviews/${userReview.id}` 
+      : `https://msr-hackathon-server.vercel.app/api/reviews/${id}`;
 
     try {
       const res = await fetch(endpoint, {

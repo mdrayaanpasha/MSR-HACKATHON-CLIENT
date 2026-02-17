@@ -33,7 +33,7 @@ const HyperUploadFinal = () => {
     Object.keys(formData).forEach(key => data.append(key, formData[key]));
 
     try {
-      const res = await fetch('http://localhost:3000/api/resource/upload', {
+      const res = await fetch('https://msr-hackathon-server.vercel.app/api/resource/upload', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: data
